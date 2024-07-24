@@ -12426,6 +12426,14 @@ var SecondaryToolbar = {
     document.getElementById('fileInput').click();
     this.close();
   },
+  
+  openURLClick: function secondaryToolbarOpenFileClick(evt) {
+	let fileURL=prompt('Enter a URL:');
+	if(fileURL!==null){
+		PDFJS.webViewerLoad(fileURL); //load URL
+	}
+    this.close();
+  },
 
   printClick: function secondaryToolbarPrintClick(evt) {
     window.print();
@@ -17443,7 +17451,10 @@ function webViewerInitialized() {
     SecondaryToolbar.presentationModeClick.bind(SecondaryToolbar));
 
   document.getElementById('openFile').addEventListener('click',
-    SecondaryToolbar.openFileClick.bind(SecondaryToolbar));
+    SecondaryToolbar.openFileClick.bind(SecondaryToolbar)); 
+	
+	document.getElementById('openURL').addEventListener('click',
+    SecondaryToolbar.openURLClick.bind(SecondaryToolbar));
 
   document.getElementById('print').addEventListener('click',
     SecondaryToolbar.printClick.bind(SecondaryToolbar));
