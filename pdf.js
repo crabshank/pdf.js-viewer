@@ -31,7 +31,7 @@
 'use strict';
 
 var initLoad=[];
-var getTrueLength=(a)=>{ return a.filter(t=>{return t===true;}).length;}
+var getValLength=(a,b)=>{ return a.filter(t=>{return t===b;}).length;}
 document.webL10n = (function(window, document, undefined) {
   var gL10nData = {};
   var gTextData = '';
@@ -10535,7 +10535,7 @@ function getVisibleElements(scrollEl, views, sortByVisibility) {
   var visible = [], view, element;
   var currentHeight, viewHeight, hiddenHeight, percentHeight;
   var currentWidth, viewWidth;
-  var notAllInit= getTrueLength(initLoad)<views.length ? true : false;
+  var notAllInit= getValLength(initLoad,true)<views.length ? true : false;
   var firstVisibleElementInd = (views.length === 0 || notAllInit) ? 0 :	
     binarySearchFirstItem(views, isElementBottomBelowViewTop);
 	
@@ -13828,6 +13828,9 @@ var PDFPageView = (function PDFPageViewClosure() {
     this.div = div;
 
     container.appendChild(div);
+    if(container.childCount===1){
+        container.style.display='none';
+    }
   }
 
   PDFPageView.prototype = {
@@ -13851,7 +13854,7 @@ var PDFPageView = (function PDFPageViewClosure() {
 
     reset: function PDFPageView_reset(keepAnnotations) {
     let pl=this.textLayerFactory._pages.length
-	if( getTrueLength(initLoad)===pl && typeof(this.div)!=='undefined' && this.div!==null){
+	if( getValLength(initLoad,true)===pl && typeof(this.div)!=='undefined' && this.div!==null){
 		let s=[...this.div.children].filter(l=>{
 			return l!==currentZoomLayer && l!==currentAnnotationNode;
 		});
@@ -14039,7 +14042,7 @@ var PDFPageView = (function PDFPageViewClosure() {
 
     draw: function PDFPageView_draw() {
 		let pl=this.textLayerFactory._pages.length;
-		if(getTrueLength(initLoad)===pl && typeof(this.div)!=='undefined' && this.div!==null){
+		if(getValLength(initLoad,true)===pl && typeof(this.div)!=='undefined' && this.div!==null){
 			let s=[...this.div.children];
 			s.forEach(l=>{
 				l.style.display='initial';
@@ -14126,8 +14129,9 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
       this.textLayer = textLayer;
       
-initLoad[pdfPage.pageIndex]=true;
-          if(getTrueLength(initLoad)===this.textLayerFactory._pages.length){
+initLoad[pdfPage.pageIndex]=false;
+          if(getValLength(initLoad,false)===this.textLayerFactory._pages.length){
+              initLoad=initLoad.map(l=>{return l===true ? false : l })
          history.pushState(null,null,'#'+document.title);
          
       }
@@ -15538,7 +15542,7 @@ var PDFViewer = (function pdfViewer() {
         }.bind(this)).then(()=>{resolve();});
 });
 };
-      if (getTrueLength(initLoad)!==this._pages.length){
+      if (getValLength(initLoad,true)!==this._pages.length){
         for(let i=0, len=visiblePages.views.length; i<len; ++i){ 
       ( async ()=>{
             pageView=visiblePages.views[i].view;
