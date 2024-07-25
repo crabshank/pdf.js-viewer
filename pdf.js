@@ -30,6 +30,8 @@
 /*jshint browser: true, devel: true, es5: true, globalstrict: true */
 'use strict';
 
+var initLoad=[];
+var getTrueLength=(a)=>{ return a.filter(t=>{return t===true;}).length;}
 document.webL10n = (function(window, document, undefined) {
   var gL10nData = {};
   var gTextData = '';
@@ -10533,27 +10535,28 @@ function getVisibleElements(scrollEl, views, sortByVisibility) {
   var visible = [], view, element;
   var currentHeight, viewHeight, hiddenHeight, percentHeight;
   var currentWidth, viewWidth;
-  var firstVisibleElementInd = (views.length === 0) ? 0 :
+  var notAllInit= getTrueLength(initLoad)<views.length ? true : false;
+  var firstVisibleElementInd = (views.length === 0 || notAllInit) ? 0 :	
     binarySearchFirstItem(views, isElementBottomBelowViewTop);
-
+	
   for (var i = firstVisibleElementInd, ii = views.length; i < ii; i++) {
     view = views[i];
     element = view.div;
     currentHeight = element.offsetTop + element.clientTop;
     viewHeight = element.clientHeight;
 
-    if (currentHeight > bottom) {
+    if (currentHeight > bottom && !notAllInit) {
       break;
     }
 
     currentWidth = element.offsetLeft + element.clientLeft;
     viewWidth = element.clientWidth;
-    if (currentWidth + viewWidth < left || currentWidth > right) {
+    if ((currentWidth + viewWidth < left || currentWidth > right)  && !notAllInit) {
       continue;
     }
     hiddenHeight = Math.max(0, top - currentHeight) +
       Math.max(0, currentHeight + viewHeight - bottom);
-    percentHeight = ((viewHeight - hiddenHeight) * 100 / viewHeight) | 0;
+    percentHeight = notAllInit ? 100 : ((viewHeight - hiddenHeight) * 100 / viewHeight) | 0;
 
     visible.push({
       id: view.id,
@@ -10567,7 +10570,7 @@ function getVisibleElements(scrollEl, views, sortByVisibility) {
   var first = visible[0];
   var last = visible[visible.length - 1];
 
-  if (sortByVisibility) {
+  if (sortByVisibility && !notAllInit) {
     visible.sort(function(a, b) {
       var pc = a.percent - b.percent;
       if (Math.abs(pc) > 0.001) {
@@ -13847,6 +13850,16 @@ var PDFPageView = (function PDFPageViewClosure() {
     },
 
     reset: function PDFPageView_reset(keepAnnotations) {
+    let pl=this.textLayerFactory._pages.length
+	if( getTrueLength(initLoad)===pl && typeof(this.div)!=='undefined' && this.div!==null){
+		let s=[...this.div.children].filter(l=>{
+			return l!==currentZoomLayer && l!==currentAnnotationNode;
+		});
+			s.forEach(l=>{
+				l.style.display='none';
+			});
+			return 
+	}
       if (this.renderTask) {
         this.renderTask.cancel();
       }
@@ -13866,7 +13879,7 @@ var PDFPageView = (function PDFPageViewClosure() {
         if (currentZoomLayer === node || currentAnnotationNode === node) {
           continue;
         }
-        div.removeChild(node);
+        //div.removeChild(node); //Remove page nodes or invisible pages
       }
       div.removeAttribute('data-loaded');
 
@@ -13888,9 +13901,9 @@ var PDFPageView = (function PDFPageViewClosure() {
         delete this.canvas;
       }
 
-      this.loadingIconDiv = document.createElement('div');
+      /*this.loadingIconDiv = document.createElement('div');
       this.loadingIconDiv.className = 'loadingIcon';
-      div.appendChild(this.loadingIconDiv);
+      div.appendChild(this.loadingIconDiv);*/
     },
 
     update: function PDFPageView_update(scale, rotation) {
@@ -14025,6 +14038,15 @@ var PDFPageView = (function PDFPageViewClosure() {
     },
 
     draw: function PDFPageView_draw() {
+		let pl=this.textLayerFactory._pages.length;
+		if(getTrueLength(initLoad)===pl && typeof(this.div)!=='undefined' && this.div!==null){
+			let s=[...this.div.children];
+			s.forEach(l=>{
+				l.style.display='initial';
+			});
+			return promise;
+		}
+		
       if (this.renderingState !== RenderingStates.INITIAL) {
         console.error('Must be in new state before drawing');
       }
@@ -14097,13 +14119,18 @@ var PDFPageView = (function PDFPageViewClosure() {
         } else {
           div.appendChild(textLayerDiv);
         }
-
+        
         textLayer = this.textLayerFactory.createTextLayerBuilder(textLayerDiv,
                                                                  this.id - 1,
                                                                  this.viewport);
       }
       this.textLayer = textLayer;
-
+      
+initLoad[pdfPage.pageIndex]=true;
+          if(getTrueLength(initLoad)===this.textLayerFactory._pages.length){
+         history.pushState(null,null,'#'+document.title);
+         
+      }
       if (outputScale.scaled) {
         // Used by the mozCurrentTransform polyfill in src/display/canvas.js.
         ctx._transformMatrix = [outputScale.sx, 0, 0, outputScale.sy, 0, 0];
@@ -14404,6 +14431,10 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
      */
     render: function TextLayerBuilder_render(timeout) {
       if (!this.divContentDone || this.renderingDone) {
+          let s=[...this.textLayerDiv.parentElement.children];
+			s.forEach(l=>{
+				l.style.display='initial';
+			});
         return;
       }
 
@@ -14412,15 +14443,15 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         this.renderTimer = null;
       }
 
-      if (!timeout) { // Render right away
+      //if (!timeout) { // Render right away
         this.renderLayer();
-      } else { // Schedule
-        var self = this;
+      //} else { // Schedule
+       /* var self = this;
         this.renderTimer = setTimeout(function() {
           self.renderLayer();
           self.renderTimer = null;
         }, timeout);
-      }
+      }*/
     },
 
     appendText: function TextLayerBuilder_appendText(geom, styles) {
@@ -15403,7 +15434,7 @@ var PDFViewer = (function pdfViewer() {
       for (var i = 0, ii = visiblePages.length, stillFullyVisible = false;
            i < ii; ++i) {
         var page = visiblePages[i];
-
+        
         if (page.percent < 100) {
           break;
         }
@@ -15499,6 +15530,23 @@ var PDFViewer = (function pdfViewer() {
 
     forceRendering: function (currentlyVisiblePages) {
       var visiblePages = currentlyVisiblePages || this._getVisiblePages();
+            var pageView;
+            const  loopLoad= (v) => {
+  return new Promise(resolve => {
+    this._ensurePdfPageLoaded(v).then(function () {
+          this.renderingQueue.renderView(v);
+        }.bind(this)).then(()=>{resolve();});
+});
+};
+      if (getTrueLength(initLoad)!==this._pages.length){
+        for(let i=0, len=visiblePages.views.length; i<len; ++i){ 
+      ( async ()=>{
+            pageView=visiblePages.views[i].view;
+           await loopLoad(pageView);
+        })();
+      }
+      return true;
+}else{
       var pageView = this.renderingQueue.getHighestPriority(visiblePages,
                                                             this._pages,
                                                             this.scroll.down);
@@ -15509,6 +15557,7 @@ var PDFViewer = (function pdfViewer() {
         return true;
       }
       return false;
+      }
     },
 
     getPageTextContent: function (pageIndex) {
@@ -17470,6 +17519,7 @@ function webViewerInitialized() {
     PDFViewerApplication.setTitleUsingUrl(file);
     var xhr = new XMLHttpRequest();
     xhr.onload = function() {
+	initLoad=[];
       PDFViewerApplication.open(new Uint8Array(xhr.response), 0);
     };
     try {
@@ -17484,6 +17534,7 @@ function webViewerInitialized() {
   }
 
   if (file) {
+	initLoad=[];
     PDFViewerApplication.open(file, 0);
   }
 }
@@ -17638,6 +17689,7 @@ window.addEventListener('change', function webViewerChange(evt) {
 
   if (!PDFJS.disableCreateObjectURL &&
       typeof URL !== 'undefined' && URL.createObjectURL) {
+	initLoad=[];
     PDFViewerApplication.open(URL.createObjectURL(file), 0);
   } else {
     // Read the local file into a Uint8Array.
@@ -17645,6 +17697,7 @@ window.addEventListener('change', function webViewerChange(evt) {
     fileReader.onload = function webViewerChangeFileReaderOnload(evt) {
       var buffer = evt.target.result;
       var uint8Array = new Uint8Array(buffer);
+	  initLoad=[];
       PDFViewerApplication.open(uint8Array, 0);
     };
     fileReader.readAsArrayBuffer(file);
@@ -18054,5 +18107,4 @@ window.addEventListener('afterprint', function afterPrint(evt) {
     window.requestAnimationFrame(resolve);
   });
 })();
-
 
