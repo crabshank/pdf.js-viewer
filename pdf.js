@@ -34,6 +34,7 @@ if(document.location.hash!==''){
 }
 var initLoad=[];
 var getValLength=(a,b)=>{ return a.filter(t=>{return t===b;}).length;}
+
 document.webL10n = (function(window, document, undefined) {
   var gL10nData = {};
   var gTextData = '';
@@ -14132,7 +14133,9 @@ var PDFPageView = (function PDFPageViewClosure() {
       this.textLayer = textLayer;
       
 initLoad[pdfPage.pageIndex]=false;
-          if(getValLength(initLoad,false)===this.textLayerFactory._pages.length){
+let vl=getValLength(initLoad,false);
+
+          if(vl===pl){
               initLoad=initLoad.map(l=>{return l===true ? false : l })
          history.pushState(null,null,'#'+document.title);
          
