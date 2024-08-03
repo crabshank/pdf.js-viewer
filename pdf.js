@@ -10542,17 +10542,23 @@ function getVisibleElements(scrollEl, views, sortByVisibility) {
   var notAllInit= getValLength(initLoad,true)<views.length ? true : false;
   var firstVisibleElementInd = (views.length === 0 || notAllInit) ? 0 :	
     binarySearchFirstItem(views, isElementBottomBelowViewTop);
-	
+	firstVisibleElementInd=Math.max(firstVisibleElementInd-2,0);
+	var xtra=null;
   for (var i = firstVisibleElementInd, ii = views.length; i < ii; i++) {
     view = views[i];
     element = view.div;
     currentHeight = element.offsetTop + element.clientTop;
     viewHeight = element.clientHeight;
 
-    if (currentHeight > bottom && !notAllInit) {
-      break;
+    if(xtra!==null && xtra===i){
+		break;
+	}else if (xtra===null && currentHeight > bottom && !notAllInit) {
+		xtra=i+2;
     }
 
+	/*if (currentHeight > bottom && !notAllInit) {
+		break;
+    }*/
     currentWidth = element.offsetLeft + element.clientLeft;
     viewWidth = element.clientWidth;
     if ((currentWidth + viewWidth < left || currentWidth > right)  && !notAllInit) {
@@ -10567,14 +10573,14 @@ function getVisibleElements(scrollEl, views, sortByVisibility) {
       x: currentWidth,
       y: currentHeight,
       view: view,
-      percent: percentHeight
+      percent: 100
     });
   }
 
   var first = visible[0];
   var last = visible[visible.length - 1];
 
-  if (sortByVisibility && !notAllInit) {
+  /*if (sortByVisibility && !notAllInit) {
     visible.sort(function(a, b) {
       var pc = a.percent - b.percent;
       if (Math.abs(pc) > 0.001) {
@@ -10582,7 +10588,7 @@ function getVisibleElements(scrollEl, views, sortByVisibility) {
       }
       return a.id - b.id; // ensure stability
     });
-  }
+  }*/
   return {first: first, last: last, views: visible};
 }
 
@@ -14224,7 +14230,14 @@ var PDFPageView = (function PDFPageViewClosure() {
 	initLoad[this.pdfPage.pageIndex]=false;
 	let vl=getValLength(initLoad,false);
 
+
 	if(vl===this.textLayerFactory.pdfDocument.pdfInfo.numPages){
+		let vc=[...viewer_global.children].map(c=>{return [...c.children]});
+		vc.forEach(c=>{
+			c.forEach(c1=>{
+				c1.style.display='none';
+			});
+		});
 		viewer_global.style.setProperty('display','block','important');
 		initLoad=initLoad.map(l=>{return l===false ? true : l });
 		history.pushState(null,null,'#'+document.title);
@@ -14443,10 +14456,10 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
      */
     render: function TextLayerBuilder_render(timeout) {
       if (!this.divContentDone || this.renderingDone) {
-          let s=[...this.textLayerDiv.parentElement.children];
+          /*let s=[...this.textLayerDiv.parentElement.children];
 			s.forEach(l=>{
 				l.style.display='initial';
-			});
+			});*/
         return;
       }
 
@@ -15442,17 +15455,31 @@ var PDFViewer = (function pdfViewer() {
 
       var currentId = this.currentPageNumber;
       var firstPage = visible.first;
-
-      for (var i = 0, ii = visiblePages.length, stillFullyVisible = false;
-           i < ii; ++i) {
+	
+		var allPages=PDFView.pdfViewer._pages.map(p=>{return p.div;});
+		let visPgDivs=visiblePages.map(p=>{return p.view.div;});
+		var invisPages=allPages.filter(p=>{return visPgDivs.includes(p)===false;});
+		for(let p=0, len_p=invisPages.length; p<len_p; ++p){
+			let s=[...invisPages[p].children];
+			s.forEach(l=>{
+				l.style.display='none';
+			});
+		}
+	let stillFullyVisible=false;
+      for (var i = 0, ii = visiblePages.length; i < ii; ++i) {
         var page = visiblePages[i];
         
-        if (page.percent < 100) {
+        /*if (page.percent < 100) {
           break;
-        }
-        if (page.id === currentId) {
+        }*/
+		
+		let s=[...page.view.div.children];
+		s.forEach(l=>{
+			l.style.display='initial';
+		});
+        if (stillFullyVisible===false && page.id === currentId) {
           stillFullyVisible = true;
-          break;
+          //break;
         }
       }
 
@@ -15465,6 +15492,11 @@ var PDFViewer = (function pdfViewer() {
       }
 
       this._updateLocation(firstPage);
+	
+	let s=[...page.view.div.children];
+	s.forEach(l=>{
+		l.style.display='initial';
+	});
 
       this.updateInProgress = false;
 
