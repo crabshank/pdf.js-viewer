@@ -14237,22 +14237,6 @@ var PDFPageView = (function PDFPageViewClosure() {
       };
       var renderTask = this.renderTask = this.pdfPage.render(renderContext);
 	  
-	initLoad[this.pdfPage.pageIndex]=false;
-	let vl=getValLength(initLoad,false);
-
-
-	if(vl===this.textLayerFactory.pdfDocument.pdfInfo.numPages){
-		let vc=[...viewer_global.children].map(c=>{return [...c.children]}).slice(2);
-		vc.forEach(c=>{
-			c.forEach(c1=>{
-				c1.style.display='none';
-			});
-		});
-		viewer_global.style.setProperty('display','block','important');
-		initLoad=initLoad.map(l=>{return l===false ? true : l });
-		history.pushState(null,null,'#'+document.title);
-	}
-
       this.renderTask.promise.then(
         function pdfPageRenderCallback() {
           pageViewDrawCallback(null);
@@ -14264,6 +14248,23 @@ var PDFPageView = (function PDFPageViewClosure() {
               }
             );
           }
+		  
+		  	initLoad[self.pdfPage.pageIndex]=false;
+				let vl=getValLength(initLoad,false);
+
+
+				if(vl===self.textLayerFactory.pdfDocument.pdfInfo.numPages){
+					let vc=[...viewer_global.children].map(c=>{return [...c.children]}).slice(2);
+					vc.forEach(c=>{
+						c.forEach(c1=>{
+							c1.style.display='none';
+						});
+					});
+					viewer_global.style.setProperty('display','block','important');
+					initLoad=initLoad.map(l=>{return l===false ? true : l });
+					history.pushState(null,null,'#'+document.title);
+				}
+		  
         },
         function pdfPageRenderError(error) {
           pageViewDrawCallback(error);
@@ -14465,13 +14466,13 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
      *   for specified amount of ms.
      */
     render: function TextLayerBuilder_render(timeout) {
-      if (!this.divContentDone || this.renderingDone) {
+      //if (!this.divContentDone || this.renderingDone) {
           /*let s=[...this.textLayerDiv.parentElement.children];
 			s.forEach(l=>{
 				l.style.display='initial';
 			});*/
-        return;
-      }
+        //return;
+     // }
 
       if (this.renderTimer) {
         clearTimeout(this.renderTimer);
