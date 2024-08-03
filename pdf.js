@@ -14232,7 +14232,7 @@ var PDFPageView = (function PDFPageViewClosure() {
 
 
 	if(vl===this.textLayerFactory.pdfDocument.pdfInfo.numPages){
-		let vc=[...viewer_global.children].map(c=>{return [...c.children]});
+		let vc=[...viewer_global.children].map(c=>{return [...c.children]}).slice(2);
 		vc.forEach(c=>{
 			c.forEach(c1=>{
 				c1.style.display='none';
