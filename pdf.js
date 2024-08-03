@@ -36,6 +36,13 @@ var initLoad=[];
 var getValLength=(a,b)=>{ return a.filter(t=>{return t===b;}).length;}
 var viewer_global,textLayerCol,textLayerColText;
 
+function doReset(){
+	initLoad=[];
+	textLayerColText.innerText='transparent';
+	textLayerCol.innerHTML='.textLayer * {color: transparent !important;} .pdfjs .textLayer:not(::selection){opacity: 0 !important;} .pdfjs .textLayer::selection{opacity: 0 !important;}';
+	viewer_global.style.setProperty('display','none','important');
+}
+
 document.webL10n = (function(window, document, undefined) {
   var gL10nData = {};
   var gTextData = '';
@@ -17561,8 +17568,7 @@ function webViewerInitialized() {
     PDFViewerApplication.setTitleUsingUrl(file);
     var xhr = new XMLHttpRequest();
     xhr.onload = function() {
-	initLoad=[];
-	viewer_global.style.setProperty('display','none','important');
+		doReset();
       PDFViewerApplication.open(new Uint8Array(xhr.response), 0);
     };
     try {
@@ -17577,8 +17583,7 @@ function webViewerInitialized() {
   }
 
   if (file) {
-	initLoad=[];
-	viewer_global.style.setProperty('display','none','important');
+	doReset();
     PDFViewerApplication.open(file, 0);
   }
 }
@@ -17592,7 +17597,7 @@ PDFJS.webViewerLoad = function (src) {
 	textLayerCol= document.getElementById('textLayerCol');
 	textLayerColText= document.getElementById('textLayerColText');
 	textLayerColText.oninput=(e)=>{
-		textLayerCol.innerHTML=`.textLayer * {color: ${textLayerColText.innerText} !important;} .pdfjs .textLayer{opacity: 1 !important;}`;
+		textLayerCol.innerHTML=`.textLayer * {color: ${textLayerColText.innerText} !important;} .pdfjs .textLayer:not(::selection){opacity: 1 !important;} .pdfjs .textLayer::selection{opacity: 1 !important;}`;
 	};
 	viewer_global.style.setProperty('display','none','important');
 }
@@ -17740,8 +17745,7 @@ window.addEventListener('change', function webViewerChange(evt) {
 
   if (!PDFJS.disableCreateObjectURL &&
       typeof URL !== 'undefined' && URL.createObjectURL) {
-	initLoad=[];
-	viewer_global.style.setProperty('display','none','important');
+	doReset();
     PDFViewerApplication.open(URL.createObjectURL(file), 0);
   } else {
     // Read the local file into a Uint8Array.
@@ -17749,8 +17753,7 @@ window.addEventListener('change', function webViewerChange(evt) {
     fileReader.onload = function webViewerChangeFileReaderOnload(evt) {
       var buffer = evt.target.result;
       var uint8Array = new Uint8Array(buffer);
-	  initLoad=[];
-	  viewer_global.style.setProperty('display','none','important');
+	  doReset();
       PDFViewerApplication.open(uint8Array, 0);
     };
     fileReader.readAsArrayBuffer(file);
