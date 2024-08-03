@@ -15493,11 +15493,6 @@ var PDFViewer = (function pdfViewer() {
 
       this._updateLocation(firstPage);
 	
-	let s=[...page.view.div.children];
-	s.forEach(l=>{
-		l.style.display='initial';
-	});
-
       this.updateInProgress = false;
 
       var event = document.createEvent('UIEvents');
