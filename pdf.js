@@ -34,6 +34,7 @@ if(document.location.hash!==''){
 }
 var initLoad=[];
 var getValLength=(a,b)=>{ return a.filter(t=>{return t===b;}).length;}
+var viewer_global;
 
 document.webL10n = (function(window, document, undefined) {
   var gL10nData = {};
@@ -14132,14 +14133,6 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
       this.textLayer = textLayer;
       
-initLoad[pdfPage.pageIndex]=false;
-let vl=getValLength(initLoad,false);
-
-          if(vl===pl){
-              initLoad=initLoad.map(l=>{return l===true ? false : l })
-         history.pushState(null,null,'#'+document.title);
-         
-      }
       if (outputScale.scaled) {
         // Used by the mozCurrentTransform polyfill in src/display/canvas.js.
         ctx._transformMatrix = [outputScale.sx, 0, 0, outputScale.sy, 0, 0];
@@ -14227,6 +14220,15 @@ let vl=getValLength(initLoad,false);
         continueCallback: renderContinueCallback
       };
       var renderTask = this.renderTask = this.pdfPage.render(renderContext);
+	  
+	initLoad[this.pdfPage.pageIndex]=false;
+	let vl=getValLength(initLoad,false);
+
+	if(vl===this.textLayerFactory.pdfDocument.pdfInfo.numPages){
+		viewer_global.style.setProperty('display','block','important');
+		initLoad=initLoad.map(l=>{return l===true ? false : l });
+		history.pushState(null,null,'#'+document.title);
+	}
 
       this.renderTask.promise.then(
         function pdfPageRenderCallback() {
@@ -14384,10 +14386,10 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
 
       // No point in rendering many divs as it would make the browser
       // unusable even after the divs are rendered.
-      if (textDivsLength > MAX_TEXT_DIVS_TO_RENDER) {
+      /*if (textDivsLength > MAX_TEXT_DIVS_TO_RENDER) {
         this._finishRendering();
         return;
-      }
+      }*/
 
       var lastFontSize;
       var lastFontFamily;
@@ -14429,6 +14431,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       }
 
       this.textLayerDiv.appendChild(textLayerFrag);
+	 
       this._finishRendering();
       this.updateMatches();
     },
@@ -16377,7 +16380,7 @@ var PDFViewerApplication = {
     this.pdfLinkService = pdfLinkService;
 
     var container = document.getElementById('viewerContainer');
-    var viewer = document.getElementById('viewer');
+    var viewer = viewer_global;
     this.pdfViewer = new PDFViewer({
       container: container,
       viewer: viewer,
@@ -16916,7 +16919,7 @@ var PDFViewerApplication = {
         window.dispatchEvent(event);
       });
 
-      self.loadingBar.setWidth(document.getElementById('viewer'));
+      self.loadingBar.setWidth(viewer_global);
 
       if (!PDFJS.disableHistory && !self.isViewerEmbedded) {
         // The browsing history is only enabled when the viewer is standalone,
@@ -17390,7 +17393,7 @@ function webViewerInitialized() {
         case 'visible':
         case 'shadow':
         case 'hover':
-          var viewer = document.getElementById('viewer');
+          var viewer = viewer_global;
           viewer.classList.add('textLayer-' + hashParams['textlayer']);
           break;
       }
@@ -17529,6 +17532,7 @@ function webViewerInitialized() {
     var xhr = new XMLHttpRequest();
     xhr.onload = function() {
 	initLoad=[];
+	viewer_global.style.setProperty('display','none','important');
       PDFViewerApplication.open(new Uint8Array(xhr.response), 0);
     };
     try {
@@ -17544,15 +17548,18 @@ function webViewerInitialized() {
 
   if (file) {
 	initLoad=[];
+	viewer_global.style.setProperty('display','none','important');
     PDFViewerApplication.open(file, 0);
   }
 }
 
 // document.addEventListener('DOMContentLoaded', webViewerLoad, true);
 PDFJS.webViewerLoad = function (src) {
-  DEFAULT_URL = src;
+	DEFAULT_URL = src;
 
-  webViewerLoad();
+	webViewerLoad();
+	viewer_global= document.getElementById('viewer');
+	viewer_global.style.setProperty('display','none','important');
 }
 
 document.addEventListener('pagerendered', function (e) {
@@ -17699,6 +17706,7 @@ window.addEventListener('change', function webViewerChange(evt) {
   if (!PDFJS.disableCreateObjectURL &&
       typeof URL !== 'undefined' && URL.createObjectURL) {
 	initLoad=[];
+	viewer_global.style.setProperty('display','none','important');
     PDFViewerApplication.open(URL.createObjectURL(file), 0);
   } else {
     // Read the local file into a Uint8Array.
@@ -17707,6 +17715,7 @@ window.addEventListener('change', function webViewerChange(evt) {
       var buffer = evt.target.result;
       var uint8Array = new Uint8Array(buffer);
 	  initLoad=[];
+	  viewer_global.style.setProperty('display','none','important');
       PDFViewerApplication.open(uint8Array, 0);
     };
     fileReader.readAsArrayBuffer(file);
