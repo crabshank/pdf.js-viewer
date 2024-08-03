@@ -34,7 +34,7 @@ if(document.location.hash!==''){
 }
 var initLoad=[];
 var getValLength=(a,b)=>{ return a.filter(t=>{return t===b;}).length;}
-var viewer_global;
+var viewer_global,textLayerCol,textLayerColText;
 
 document.webL10n = (function(window, document, undefined) {
   var gL10nData = {};
@@ -10969,7 +10969,10 @@ Preferences._readFromStorage = function (prefObj) {
   window.addEventListener('keydown', function(event) {
     // Intercept Cmd/Ctrl + P in all browsers.
     // Also intercept Cmd/Ctrl + Shift + P in Chrome and Opera
-    if (event.keyCode === 80/*P*/ && (event.ctrlKey || event.metaKey) &&
+	let t=event.target;
+	if(t===textLayerColText){
+		return;
+	}else if(event.keyCode === 80/*P*/ && (event.ctrlKey || event.metaKey) &&
         !event.altKey && (!event.shiftKey || window.chrome || window.opera)) {
       window.print();
       if (hasAttachEvent) {
@@ -17586,6 +17589,11 @@ PDFJS.webViewerLoad = function (src) {
 
 	webViewerLoad();
 	viewer_global= document.getElementById('viewer');
+	textLayerCol= document.getElementById('textLayerCol');
+	textLayerColText= document.getElementById('textLayerColText');
+	textLayerColText.oninput=(e)=>{
+		textLayerCol.innerHTML=`.textLayer * {color: ${textLayerColText.innerText} !important;} .pdfjs .textLayer{opacity: 1 !important;}`;
+	};
 	viewer_global.style.setProperty('display','none','important');
 }
 
@@ -17897,6 +17905,11 @@ window.addEventListener('click', function click(evt) {
 }, false);
 
 window.addEventListener('keydown', function keydown(evt) {
+	let t=event.target;
+	if(t===textLayerColText){
+		return;
+	}
+	
   if (OverlayManager.active) {
     return;
   }
