@@ -14226,7 +14226,7 @@ var PDFPageView = (function PDFPageViewClosure() {
 
 	if(vl===this.textLayerFactory.pdfDocument.pdfInfo.numPages){
 		viewer_global.style.setProperty('display','block','important');
-		initLoad=initLoad.map(l=>{return l===true ? false : l });
+		initLoad=initLoad.map(l=>{return l===false ? true : l });
 		history.pushState(null,null,'#'+document.title);
 	}
 
