@@ -36,6 +36,24 @@ var initLoad=[];
 var getValLength=(a,b)=>{ return a.filter(t=>{return t===b;}).length;}
 var viewer_global,textLayerCol,textLayerColText;
 
+function initLoad_end(idx,numPages){
+	initLoad[idx]=false;
+	let vl=getValLength(initLoad,false);
+
+
+	if(vl===numPages){
+		let vc=[...viewer_global.children].map(c=>{return [...c.children]}).slice(2);
+		vc.forEach(c=>{
+			c.forEach(c1=>{
+				c1.style.display='none';
+			});
+		});
+		viewer_global.style.setProperty('display','block','important');
+		initLoad=initLoad.map(l=>{return l===false ? true : l });
+		history.pushState(null,null,'#'+document.title);
+	}
+}
+
 function doReset(){
 	initLoad=[];
 	textLayerColText.innerText='transparent';
@@ -13848,9 +13866,9 @@ var PDFPageView = (function PDFPageViewClosure() {
     this.div = div;
 
     container.appendChild(div);
-    if(container.childCount===1){
+    /*if(container.childCount===1){
         container.style.display='none';
-    }
+    }*/
   }
 
   PDFPageView.prototype = {
@@ -13873,7 +13891,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     },
 
     reset: function PDFPageView_reset(keepAnnotations) {
-    let pl=this.textLayerFactory._pages.length
+    let pl=this.textLayerFactory._pages.length;
 	if( getValLength(initLoad,true)===pl && typeof(this.div)!=='undefined' && this.div!==null){
 		let s=[...this.div.children].filter(l=>{
 			return l!==currentZoomLayer && l!==currentAnnotationNode;
@@ -14235,7 +14253,7 @@ var PDFPageView = (function PDFPageViewClosure() {
         // intent: 'default', // === 'display'
         continueCallback: renderContinueCallback
       };
-      var renderTask = this.renderTask = this.pdfPage.render(renderContext);
+	  var renderTask = this.renderTask = this.pdfPage.render(renderContext);
 	  
       this.renderTask.promise.then(
         function pdfPageRenderCallback() {
@@ -14243,34 +14261,21 @@ var PDFPageView = (function PDFPageViewClosure() {
           if (textLayer) {
             self.pdfPage.getTextContent().then(
               function textContentResolved(textContent) {
+				 initLoad_end(self.pdfPage.pageIndex,self.textLayerFactory.pdfDocument.pdfInfo.numPages);
                 textLayer.setTextContent(textContent);
                 textLayer.render(TEXT_LAYER_RENDER_DELAY);
               }
             );
-          }
-		  
-		  	initLoad[self.pdfPage.pageIndex]=false;
-				let vl=getValLength(initLoad,false);
-
-
-				if(vl===self.textLayerFactory.pdfDocument.pdfInfo.numPages){
-					let vc=[...viewer_global.children].map(c=>{return [...c.children]}).slice(2);
-					vc.forEach(c=>{
-						c.forEach(c1=>{
-							c1.style.display='none';
-						});
-					});
-					viewer_global.style.setProperty('display','block','important');
-					initLoad=initLoad.map(l=>{return l===false ? true : l });
-					history.pushState(null,null,'#'+document.title);
-				}
+          }else{
+			initLoad_end(self.pdfPage.pageIndex,self.textLayerFactory.pdfDocument.pdfInfo.numPages);
+		  }
 		  
         },
         function pdfPageRenderError(error) {
           pageViewDrawCallback(error);
         }
       );
-
+	
       if (this.annotationsLayerFactory) {
         if (!this.annotationLayer) {
           this.annotationLayer = this.annotationsLayerFactory.
@@ -14283,6 +14288,7 @@ var PDFPageView = (function PDFPageViewClosure() {
       if (self.onBeforeDraw) {
         self.onBeforeDraw();
       }
+	  initLoad_end(self.pdfPage.pageIndex,self.textLayerFactory.pdfDocument.pdfInfo.numPages);
       return promise;
     },
 
@@ -14455,9 +14461,8 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       }
 
       this.textLayerDiv.appendChild(textLayerFrag);
-	 
       this._finishRendering();
-      this.updateMatches();
+      //this.updateMatches();
     },
 
     /**
@@ -15224,9 +15229,9 @@ var PDFViewer = (function pdfViewer() {
         return;
       }
       this.update();
-      for (var i = 0, ii = this._pages.length; i < ii; i++) {
+     /* for (var i = 0, ii = this._pages.length; i < ii; i++) {
         this._pages[i].updatePosition();
-      }
+      }*/
     },
 
     _setScaleDispatchEvent: function pdfViewer_setScaleDispatchEvent(
