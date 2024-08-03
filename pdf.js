@@ -57,7 +57,7 @@ function initLoad_end(idx,numPages){
 function doReset(){
 	initLoad=[];
 	textLayerColText.innerText='transparent';
-	textLayerCol.innerHTML='.textLayer * {color: transparent !important; mix-blend-mode: multiply !important;} .pdfjs .textLayer:not(::selection){opacity: 0 !important;} .pdfjs .textLayer::selection{opacity: 0 !important;}';
+	textLayerCol.innerHTML='.textLayer * {color: transparent !important;} .textLayer :not(div) {opacity: 0.32 !important;} .pdfjs .textLayer:not(::selection){opacity: 0 !important;} .pdfjs .textLayer::selection{opacity: 0 !important;}';
 	viewer_global.style.setProperty('display','none','important');
 }
 
