@@ -11560,6 +11560,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
         this.hadMatch = false;
         this.resumePageIdx = null;
         this.pageMatches = [];
+		this.cumulPageMatches=[];
         var self = this;
 
         for (var i = 0; i < numPages; i++) {
@@ -14521,10 +14522,12 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       var ret = [];
 		
 		let pmc=0;
-      for (var m = 0, len = this.findController.pageMatches.length; m < len; ++m) {
+		let mLen=this.findController.pageMatches.length;
+      for (var m = 0; m < mLen; ++m) {
 		  this.findController.cumulPageMatches[m]=pmc;
 		  pmc+=this.findController.pageMatches[m].length;
 	  }
+	  this.findController.cumulPageMatches[mLen]=pmc;
 	  
       for (var m = 0, len = matches.length; m < len; m++) {
         // Calculate the start position.
@@ -14634,7 +14637,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
 			let p=sel.pageIdx;
 			let c=0;
 			c=this.findController.cumulPageMatches[p];
-			this.findController.findBar.currentMatch.innerText=`#${c+sel.matchIdx+1}, page ${p+1}`;
+			this.findController.findBar.currentMatch.innerText=`#${c+sel.matchIdx+1}/${this.findController.cumulPageMatches.at(-1)}, page ${p+1}`;
 			this.findController.findBar.currentMatch.style.display='';
 		}
 		
