@@ -35,6 +35,7 @@ if(document.location.hash!==''){
 var initLoad=[];
 var pgHTML=[];
 var pgTxc=[];
+var pgCvs=[];
 var getValLength=(a,b)=>{ return a.filter(t=>{return t===b;}).length;}
 var viewer_global,textLayerCol,textLayerColText;
 
@@ -62,6 +63,7 @@ function doReset(){
 	initLoad=[];
 	pgHTML=[];
 	pgTxc=[];
+	pgCvs=[];
 	textLayerColText.innerText='transparent';
 	textLayerCol.innerHTML='.textLayer * {color: transparent !important;} .textLayer :not(div) {opacity: 0.32 !important;} .pdfjs .textLayer:not(::selection){opacity: 0 !important;} .pdfjs .textLayer::selection{opacity: 0 !important;}';
 	viewer_global.style.setProperty('display','none','important');
@@ -13903,7 +13905,9 @@ var PDFPageView = (function PDFPageViewClosure() {
 			return l!==currentZoomLayer && l!==currentAnnotationNode && l.className!=='searchable';
 		});
 			s.forEach(l=>{
-				if(l.classList.contains('textLayer')){
+				if(l.classList.contains('canvasWrapper') && l.childElementCount>0){
+					l.removeChild(l.firstElementChild);
+				}else if(l.classList.contains('textLayer')){
 					l.innerHTML='';
 				}else{
 					l.style.display='none';
@@ -14095,7 +14099,10 @@ var PDFPageView = (function PDFPageViewClosure() {
 				return l.className!=='searchable';
 			});
 			s.forEach(l=>{
-				if(l.classList.contains('textLayer') && l.innerHTML===''){
+				if(l.classList.contains('canvasWrapper') && l.childElementCount===0){
+					let ix=parseInt(l.parentElement.getAttribute('data-page-number'))-1;
+					l.appendChild(pgCvs[ix]);
+				}else if(l.classList.contains('textLayer') && l.innerHTML===''){
 					let ix=parseInt(l.parentElement.getAttribute('data-page-number'))-1;
 					if (typeof(pgHTML[ix])!=='undefined'){
 						pgHTML[ix].forEach(h=>{
@@ -14127,7 +14134,8 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       var canvas = document.createElement('canvas');
       canvas.id = 'page' + this.id;
-      canvasWrapper.appendChild(canvas);
+      //canvasWrapper.appendChild(canvas);
+	  pgCvs[this.id-1]=canvas;
       if (this.annotationLayer) {
         // annotationLayer needs to stay on top
         div.insertBefore(canvasWrapper, this.annotationLayer.div);
@@ -15520,7 +15528,9 @@ var PDFViewer = (function pdfViewer() {
 				return l.className!=='searchable';
 			});
 			s.forEach(l=>{
-				if(l.classList.contains('textLayer')){
+				if(l.classList.contains('canvasWrapper') && l.childElementCount>0){
+					l.removeChild(l.firstElementChild);
+				}else if(l.classList.contains('textLayer')){
 					l.innerHTML='';
 				}else{
 					l.style.display='none';
@@ -15539,7 +15549,10 @@ var PDFViewer = (function pdfViewer() {
 				return l.className!=='searchable';
 			});
 			s.forEach(l=>{
-				if(l.classList.contains('textLayer') && l.innerHTML===''){
+				if(l.classList.contains('canvasWrapper') && l.childElementCount===0){
+					let ix=parseInt(l.parentElement.getAttribute('data-page-number'))-1;
+					l.appendChild(pgCvs[ix]);
+				}else if(l.classList.contains('textLayer') && l.innerHTML===''){
 					let ix=parseInt(l.parentElement.getAttribute('data-page-number'))-1;
 					if (typeof(pgHTML[ix])!=='undefined'){
 						pgHTML[ix].forEach(h=>{
