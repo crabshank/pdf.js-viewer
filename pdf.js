@@ -11193,6 +11193,7 @@ var PDFFindBar = (function PDFFindBarClosure() {
     this.findField = options.findField || null;
     this.plainSearch = options.plainSearch || null;
     this.unic = options.unic || null;
+    this.currentMatch = options.currentMatch || null;
     this.caseSensitive = options.caseSensitiveCheckbox || null;
     this.findMsg = options.findMsg || null;
     this.findStatusIcon = options.findStatusIcon || null;
@@ -11267,6 +11268,8 @@ var PDFFindBar = (function PDFFindBarClosure() {
           break;
 
         case FindStates.FIND_NOTFOUND:
+		  this.currentMatch.style.display='none';
+		  this.currentMatch.innerHTML='';
           findMsg = mozL10n.get('find_not_found', null, 'Phrase not found');
           notFound = true;
           break;
@@ -11346,6 +11349,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
     this.active = false; // If active, find results will be highlighted.
     this.pageContents = []; // Stores the text for each page.
     this.pageMatches = [];
+	this.cumulPageMatches=[];
     this.selected = { // Currently selected match.
       pageIdx: -1,
       matchIdx: -1
@@ -11421,6 +11425,8 @@ var PDFFindController = (function PDFFindControllerClosure() {
 		var caseSensitive = this.state.caseSensitive;
 		var isPlain=this.findBar.plainSearch.checked;
 		if(query===''){
+			this.findBar.currentMatch.innerHTML='';
+			this.findBar.currentMatch.style.display='none';
 			return;
 		}
 		
@@ -14513,7 +14519,13 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       var queryLen = (this.findController === null ?
                       0 : this.findController.state.query.length);
       var ret = [];
-
+		
+		let pmc=0;
+      for (var m = 0, len = this.findController.pageMatches.length; m < len; ++m) {
+		  this.findController.cumulPageMatches[m]=pmc;
+		  pmc+=this.findController.pageMatches[m].length;
+	  }
+	  
       for (var m = 0, len = matches.length; m < len; m++) {
         // Calculate the start position.
 		let mm=matches[m];
@@ -14616,7 +14628,16 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
           this.findController.updateMatchPosition(pageIdx, i, textDivs,
                                                   begin.divIdx, end.divIdx);
         }
-
+		
+		if(isSelected){
+			let sel=this.findController.selected;
+			let p=sel.pageIdx;
+			let c=0;
+			c=this.findController.cumulPageMatches[p];
+			this.findController.findBar.currentMatch.innerText=`#${c+sel.matchIdx+1}, page ${p+1}`;
+			this.findController.findBar.currentMatch.style.display='';
+		}
+		
         // Match inside new div.
         if (!prevEnd || begin.divIdx !== prevEnd.divIdx) {
           // If there was a previous div, then add the text at the end.
@@ -16370,6 +16391,7 @@ var PDFViewerApplication = {
       findField: document.getElementById('findInput'),
 	  plainSearch: document.getElementById('plainSearch'),
 	  unic: document.getElementById('unic'),
+	  currentMatch: document.getElementById('currentMatch'),
       caseSensitiveCheckbox: document.getElementById('findMatchCase'),
       findMsg: document.getElementById('findMsg'),
       findStatusIcon: document.getElementById('findStatusIcon'),
