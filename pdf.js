@@ -14453,7 +14453,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       var fontHeight = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
       var fontAscent = fontHeight;
       if (style.ascent) {
-        fontAscent = style.ascent * fontAscent;
+         fontAscent =  fontAscent+(style.ascent ===0 ? style.descent : style.descent/style.ascent);
       } else if (style.descent) {
         fontAscent = (1 + style.descent) * fontAscent;
       }
