@@ -33,29 +33,35 @@ if(document.location.hash!==''){
     history.pushState(null,null,'#');
 }
 var initLoad=[];
+var pgHTML=[];
+var pgTxc=[];
 var getValLength=(a,b)=>{ return a.filter(t=>{return t===b;}).length;}
 var viewer_global,textLayerCol,textLayerColText;
 
 function initLoad_end(idx,numPages){
-	initLoad[idx]=false;
+	
 	let vl=getValLength(initLoad,false);
-
-
-	if(vl===numPages){
-		let vc=[...viewer_global.children].map(c=>{return [...c.children]}).slice(2);
-		vc.forEach(c=>{
+	let vl2=getValLength(initLoad,true);
+	
+	if(vl===numPages && vl2!==numPages){
+		//let vc=[...viewer_global.children].map(c=>{return [...c.children]})/*.slice(2)*/;
+		/*vc.forEach(c=>{
 			c.forEach(c1=>{
 				c1.style.display='none';
 			});
-		});
+		});*/
 		viewer_global.style.setProperty('display','block','important');
 		initLoad=initLoad.map(l=>{return l===false ? true : l });
 		history.pushState(null,null,'#'+document.title);
+	}else if(vl2!==numPages){
+		initLoad[idx]=false;
 	}
 }
 
 function doReset(){
 	initLoad=[];
+	pgHTML=[];
+	pgTxc=[];
 	textLayerColText.innerText='transparent';
 	textLayerCol.innerHTML='.textLayer * {color: transparent !important;} .textLayer :not(div) {opacity: 0.32 !important;} .pdfjs .textLayer:not(::selection){opacity: 0 !important;} .pdfjs .textLayer::selection{opacity: 0 !important;}';
 	viewer_global.style.setProperty('display','none','important');
@@ -13894,10 +13900,14 @@ var PDFPageView = (function PDFPageViewClosure() {
     let pl=this.textLayerFactory._pages.length;
 	if( getValLength(initLoad,true)===pl && typeof(this.div)!=='undefined' && this.div!==null){
 		let s=[...this.div.children].filter(l=>{
-			return l!==currentZoomLayer && l!==currentAnnotationNode;
+			return l!==currentZoomLayer && l!==currentAnnotationNode && l.className!=='searchable';
 		});
 			s.forEach(l=>{
-				l.style.display='none';
+				if(l.classList.contains('textLayer')){
+					l.innerHTML='';
+				}else{
+					l.style.display='none';
+				}
 			});
 			return 
 	}
@@ -14081,9 +14091,20 @@ var PDFPageView = (function PDFPageViewClosure() {
     draw: function PDFPageView_draw() {
 		let pl=this.textLayerFactory._pages.length;
 		if(getValLength(initLoad,true)===pl && typeof(this.div)!=='undefined' && this.div!==null){
-			let s=[...this.div.children];
+			let s=[...this.div.children].filter(l=>{
+				return l.className!=='searchable';
+			});
 			s.forEach(l=>{
-				l.style.display='initial';
+				if(l.classList.contains('textLayer') && l.innerHTML===''){
+					let ix=parseInt(l.parentElement.getAttribute('data-page-number'))-1;
+					if (typeof(pgHTML[ix])!=='undefined'){
+						pgHTML[ix].forEach(h=>{
+							l.insertAdjacentHTML('beforeend',h);
+						});
+					}
+				}else{
+					l.style.display='initial';
+				}
 			});
 			return promise;
 		}
@@ -14149,23 +14170,29 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       var textLayerDiv = null;
       var textLayer = null;
+      var searchableDiv = null;
       if (this.textLayerFactory) {
         textLayerDiv = document.createElement('div');
         textLayerDiv.className = 'textLayer';
         textLayerDiv.style.width = canvas.style.width;
         textLayerDiv.style.height = canvas.style.height;
+		searchableDiv= document.createElement('div');
+		searchableDiv.className='searchable';
+		searchableDiv.style.display='none';
         if (this.annotationLayer) {
           // annotationLayer needs to stay on top
           div.insertBefore(textLayerDiv, this.annotationLayer.div);
         } else {
           div.appendChild(textLayerDiv);
         }
-        
+		textLayerDiv.insertAdjacentElement('beforebegin',searchableDiv);
+		
         textLayer = this.textLayerFactory.createTextLayerBuilder(textLayerDiv,
                                                                  this.id - 1,
                                                                  this.viewport);
       }
       this.textLayer = textLayer;
+      this.searchableDiv = searchableDiv;
       
       if (outputScale.scaled) {
         // Used by the mozCurrentTransform polyfill in src/display/canvas.js.
@@ -14460,7 +14487,20 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         }
       }
 
-      this.textLayerDiv.appendChild(textLayerFrag);
+      //this.textLayerDiv.appendChild(textLayerFrag);
+	  let pix=this.pageIdx;
+	  let oh=[];
+	  for(let i=0, len_i=textLayerFrag.childNodes.length; i<len_i; ++i){
+		  oh.push(textLayerFrag.childNodes[i].outerHTML);
+	  }
+	  if(typeof (pgHTML[this.pageIdx]) ==='undefined'){
+		  pgHTML[pix]=[oh.join('')];
+		  pgTxc[pix]=[textLayerFrag.textContent];
+	  }else{
+		   pgHTML[pix].push(oh.join(''));
+		   pgTxc[pix].push(textLayerFrag.textContent);
+	  }
+	  this.textLayerDiv.previousElementSibling.textContent=pgTxc[pix].join('');
       this._finishRendering();
       //this.updateMatches();
     },
@@ -15476,9 +15516,15 @@ var PDFViewer = (function pdfViewer() {
 		let visPgDivs=visiblePages.map(p=>{return p.view.div;});
 		var invisPages=allPages.filter(p=>{return visPgDivs.includes(p)===false;});
 		for(let p=0, len_p=invisPages.length; p<len_p; ++p){
-			let s=[...invisPages[p].children];
+			let s=[...invisPages[p].children].filter(l=>{
+				return l.className!=='searchable';
+			});
 			s.forEach(l=>{
-				l.style.display='none';
+				if(l.classList.contains('textLayer')){
+					l.innerHTML='';
+				}else{
+					l.style.display='none';
+				}
 			});
 		}
 	let stillFullyVisible=false;
@@ -15489,10 +15535,22 @@ var PDFViewer = (function pdfViewer() {
           break;
         }*/
 		
-		let s=[...page.view.div.children];
-		s.forEach(l=>{
-			l.style.display='initial';
-		});
+		let s=[...page.view.div.children].filter(l=>{
+				return l.className!=='searchable';
+			});
+			s.forEach(l=>{
+				if(l.classList.contains('textLayer') && l.innerHTML===''){
+					let ix=parseInt(l.parentElement.getAttribute('data-page-number'))-1;
+					if (typeof(pgHTML[ix])!=='undefined'){
+						pgHTML[ix].forEach(h=>{
+							l.insertAdjacentHTML('beforeend',h);
+						});
+					}
+				}else{
+					l.style.display='initial';
+				}
+			});
+		
         if (stillFullyVisible===false && page.id === currentId) {
           stillFullyVisible = true;
           //break;
