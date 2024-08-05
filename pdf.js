@@ -11452,7 +11452,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
 			let rf=this.findBar.unic.checked ? 'u' : '';
             let patExp;
             try{
-                    patExp=new RegExp(this.state.query, (caseSensitive ? rf+"ig" : rf+"ug"));
+                    patExp=new RegExp(this.state.query, (caseSensitive ? rf+"g" : rf+"ig"));
                 }catch(e){
                     this.findBar.currentMatch.innerHTML='';
                     this.findBar.currentMatch.style.display='none';
