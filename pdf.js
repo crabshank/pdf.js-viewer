@@ -11450,7 +11450,14 @@ var PDFFindController = (function PDFFindControllerClosure() {
 			}
 		}else{ //regex
 			let rf=this.findBar.unic.checked ? 'u' : '';
-			let patExp=new RegExp(this.state.query, (caseSensitive ? rf+"ig" : rf+"ug"));
+            let patExp;
+            try{
+                    patExp=new RegExp(this.state.query, (caseSensitive ? rf+"ig" : rf+"ug"));
+                }catch(e){
+                    this.findBar.currentMatch.innerHTML='';
+                    this.findBar.currentMatch.style.display='none';
+                    return;
+                }
 			a=[...str.matchAll(patExp)];
 			for(let i=0, len_i=a.length; i<len_i; ++i){
 				a[i][0]=a[i][0].length;
